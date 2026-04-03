@@ -233,10 +233,10 @@ if "analysis" in st.session_state:
     for s in data["suggestions"]:
         st.markdown(f"- {s}")
 
-    # ===============================
-    # 🚀 OPTIMIZE
-    # ===============================
-  if st.button("🚀 Generate Optimized Resume"):
+# ===============================
+# 🚀 OPTIMIZE
+# ===============================
+if st.button("🚀 Generate Optimized Resume"):
     with st.spinner("Optimizing..."):
         optimized = optimize_resume(jd, resume_text)
     st.subheader("✨ Optimized Resume")
@@ -247,7 +247,6 @@ if "analysis" in st.session_state:
         height=400,
         label_visibility="collapsed"
     )
-
     create_docx(optimized)
 
     if convert_to_pdf():
