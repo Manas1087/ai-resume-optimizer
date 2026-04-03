@@ -7,11 +7,11 @@ from docx2pdf import convert
 import re
 
 # ===============================
-# 🎨 CUSTOM UI (SaaS STYLE)
+# 🎨 UI STYLE
 # ===============================
 st.markdown("""
 <style>
-.main {
+body {
     background-color: #0f172a;
 }
 h1, h2, h3 {
@@ -23,12 +23,6 @@ h1, h2, h3 {
     border-radius: 10px;
     padding: 10px 20px;
     font-weight: bold;
-}
-.stButton>button:hover {
-    background-color: #1d4ed8;
-}
-.block-container {
-    padding-top: 2rem;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -50,16 +44,27 @@ def extract_text_from_pdf(uploaded_file):
     return text
 
 # ===============================
-# 🤖 ANALYZE
+# 🤖 ANALYZE (STRUCTURED)
 # ===============================
 def analyze_resume(jd, resume):
     prompt = f"""
-Return in markdown format:
+Analyze the resume against the job description.
 
-**Match Score:** <number>%
-**Matching Skills:** <comma separated>
-**Missing Skills:** <comma separated>
-**Suggestions:** <short paragraph>
+STRICT FORMAT:
+
+Match Score: <number>%
+
+Matching Skills:
+- skill1
+- skill2
+
+Missing Skills:
+- skill1
+- skill2
+
+Suggestions:
+- point1
+- point2
 
 Job Description:
 {jd}
@@ -137,25 +142,48 @@ def convert_to_pdf():
         return False
 
 # ===============================
-# 🎯 SCORE EXTRACT
+# 🧠 PARSE ANALYSIS
 # ===============================
-def extract_score(text):
-    match = re.search(r"(\d+)%", text)
-    return int(match.group(1)) if match else 0
+def parse_analysis(text):
+    sections = {
+        "score": "",
+        "matching": [],
+        "missing": [],
+        "suggestions": []
+    }
+
+    current = None
+
+    for line in text.split("\n"):
+        line = line.strip()
+
+        if "Match Score" in line:
+            sections["score"] = line.split(":")[1].strip()
+
+        elif line.startswith("Matching Skills"):
+            current = "matching"
+
+        elif line.startswith("Missing Skills"):
+            current = "missing"
+
+        elif line.startswith("Suggestions"):
+            current = "suggestions"
+
+        elif line.startswith("-") and current:
+            sections[current].append(line[1:].strip())
+
+    return sections
 
 # ===============================
 # 🌐 UI
 # ===============================
-st.markdown("""
-# 🚀 AI Resume Optimizer  
-### Optimize your resume with AI for better job matching
-""")
+st.title("🚀 AI Resume Optimizer")
 
 uploaded_file = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
 jd = st.text_area("Paste Job Description")
 
 # ===============================
-# 🔍 ANALYZE BUTTON
+# 🔍 ANALYZE
 # ===============================
 if uploaded_file and jd:
     if st.button("🔍 Analyze Resume"):
@@ -169,30 +197,35 @@ if uploaded_file and jd:
         st.session_state["resume_text"] = resume_text
 
 # ===============================
-# 📊 SHOW ANALYSIS
+# 📊 DISPLAY
 # ===============================
 if "analysis" in st.session_state:
 
-    analysis = st.session_state["analysis"]
-    resume_text = st.session_state["resume_text"]
+    data = parse_analysis(st.session_state["analysis"])
+    score = int(re.search(r"\d+", data["score"]).group()) if data["score"] else 0
 
-    score = extract_score(analysis)
+    st.subheader("📊 Resume Analysis")
 
-    st.markdown("## 📊 Resume Analysis")
-
+    # Metrics
     col1, col2, col3 = st.columns(3)
-    col1.metric("🎯 Match Score", f"{score}%")
-    col2.metric("📈 Level", "Strong" if score >= 70 else "Moderate")
-    col3.metric("⚠️ Improve", "Yes" if score < 70 else "Low")
+    col1.metric("Match Score", f"{score}%")
+    col2.metric("Strength", "Strong" if score >= 70 else "Moderate")
+    col3.metric("Needs Improvement", "Yes" if score < 70 else "Low")
 
     st.progress(score / 100)
 
-    st.markdown("### 📋 Details")
-    st.markdown(f"""
-    <div style="background:#1e293b;padding:15px;border-radius:10px">
-    {analysis}
-    </div>
-    """, unsafe_allow_html=True)
+    # Sections
+    st.markdown("### ✅ Matching Skills")
+    for s in data["matching"]:
+        st.markdown(f"- {s}")
+
+    st.markdown("### ❌ Missing Skills")
+    for s in data["missing"]:
+        st.markdown(f"- {s}")
+
+    st.markdown("### 💡 Suggestions")
+    for s in data["suggestions"]:
+        st.markdown(f"- {s}")
 
     # ===============================
     # 🚀 OPTIMIZE
@@ -200,9 +233,9 @@ if "analysis" in st.session_state:
     if st.button("🚀 Generate Optimized Resume"):
 
         with st.spinner("Optimizing..."):
-            optimized = optimize_resume(jd, resume_text)
+            optimized = optimize_resume(jd, st.session_state["resume_text"])
 
-        st.markdown("### ✨ Optimized Resume")
+        st.subheader("✨ Optimized Resume")
         st.text_area("Preview", optimized, height=400, label_visibility="collapsed")
 
         create_docx(optimized)
