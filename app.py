@@ -202,61 +202,43 @@ if uploaded_file and jd:
 if "analysis" in st.session_state:
 
     data = parse_analysis(st.session_state["analysis"])
-    score = int(re.search(r"\d+", data["score"]).group()) if data["score"] else 0
+    resume_text = st.session_state["resume_text"]
 
+    # ===== SHOW ANALYSIS =====
     st.subheader("📊 Resume Analysis")
 
-    # Metrics
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Match Score", f"{score}%")
-    col2.metric("Strength", "Strong" if score >= 70 else "Moderate")
-    col3.metric("Needs Improvement", "Yes" if score < 70 else "Low")
-
-    st.progress(score / 100)
-
-    # Sections
-    st.markdown("### ✅ Matching Skills")
-    for s in data["matching"]:
-        st.markdown(f"- {s}")
-
-    st.markdown("### ❌ Missing Skills")
-    for s in data["missing"]:
-        st.markdown(f"- {s}")
-
-    st.markdown("### 💡 Suggestions")
-    for s in data["suggestions"]:
-        st.markdown(f"- {s}")
+    # (your metrics + skills UI here)
 
     # ===============================
-    # 🚀 OPTIMIZE
+    # 🚀 OPTIMIZE BUTTON (FIXED)
     # ===============================
-   if st.button("🚀 Generate Optimized Resume"):
+    if st.button("🚀 Generate Optimized Resume"):
 
-    with st.spinner("Optimizing..."):
-        optimized = optimize_resume(jd, st.session_state["resume_text"])
+        with st.spinner("Optimizing..."):
+            optimized = optimize_resume(jd, resume_text)
 
-    st.subheader("✨ Optimized Resume")
+        st.subheader("✨ Optimized Resume")
 
-    st.text_area(
-        "Preview",
-        optimized,
-        height=400,
-        label_visibility="collapsed"
-    )
+        st.text_area(
+            "Preview",
+            optimized,
+            height=400,
+            label_visibility="collapsed"
+        )
 
-    create_docx(optimized)
+        create_docx(optimized)
 
-    if convert_to_pdf():
-        with open("optimized_resume.pdf", "rb") as f:
-            st.download_button(
-                "📥 Download PDF",
-                f,
-                file_name="optimized_resume.pdf"
-            )
-    else:
-        with open("optimized_resume.docx", "rb") as f:
-            st.download_button(
-                "📥 Download DOCX",
-                f,
-                file_name="optimized_resume.docx"
-            )
+        if convert_to_pdf():
+            with open("optimized_resume.pdf", "rb") as f:
+                st.download_button(
+                    "📥 Download PDF",
+                    f,
+                    file_name="optimized_resume.pdf"
+                )
+        else:
+            with open("optimized_resume.docx", "rb") as f:
+                st.download_button(
+                    "📥 Download DOCX",
+                    f,
+                    file_name="optimized_resume.docx"
+                )
