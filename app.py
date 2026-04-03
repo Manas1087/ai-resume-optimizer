@@ -86,13 +86,18 @@ def optimize_resume(jd, resume):
     prompt = f"""
 Rewrite the resume keeping structure same.
 
+Rules:
 - Use bullet points
 - ATS friendly
 - Add missing keywords
+- Use clean plain text formatting
+- DO NOT use markdown symbols like **, *, or #
+- Section headings should be in CAPITAL LETTERS
+- Keep proper spacing between sections
 
-Return only formatted resume.
+Return only clean resume text.
 
-JD:
+Job Description:
 {jd}
 
 Resume:
