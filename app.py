@@ -7,9 +7,8 @@ from docx.shared import Pt
 from docx2pdf import convert
 import re
 
-# ===============================
-# 🎨 CUSTOM UI (SaaS STYLE)
-# ===============================
+#UI 
+
 st.markdown("""
 <style>
 .main {
@@ -34,9 +33,7 @@ h1, h2, h3 {
 </style>
 """, unsafe_allow_html=True)
 
-# ===============================
-# 🔑 GEMINI CLIENT
-# ===============================
+
 st.markdown("""
 <style>
 body {
@@ -55,15 +52,14 @@ h1, h2, h3 {
 </style>
 """, unsafe_allow_html=True)
 
-# ===============================
-# 🔑 GEMINI CLIENT (SECURE)
-# ===============================
+# GEMINI CLIENT
+
 client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 MODEL = "gemini-2.5-flash"
 
-# ===============================
-# 📄 Extract PDF
-# ===============================
+
+# Extract PDF
+
 def extract_text_from_pdf(uploaded_file):
     text = ""
     with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
@@ -71,9 +67,8 @@ def extract_text_from_pdf(uploaded_file):
             text += page.get_text()
     return text
 
-# ===============================
-# 🤖 ANALYZE
-# ===============================
+#  ANALYZE
+
 def analyze_resume(jd, resume):
     prompt = f"""
 Return in markdown format:
@@ -95,9 +90,8 @@ Resume:
     )
     return response.text
 
-# ===============================
-# ✨ OPTIMIZE
-# ===============================
+#  OPTIMIZE
+
 def optimize_resume(jd, resume):
     prompt = f"""
 Rewrite the resume keeping structure same.
@@ -120,9 +114,9 @@ Resume:
     )
     return response.text
 
-# ===============================
-# 📄 DOCX FORMAT
-# ===============================
+
+#  DOCX FORMAT
+
 def create_docx(content):
     doc = Document()
 
@@ -148,9 +142,9 @@ def create_docx(content):
 
     doc.save("optimized_resume.docx")
 
-# ===============================
-# 🔁 PDF
-# ===============================
+
+# PDF
+
 def convert_to_pdf():
     try:
         convert("optimized_resume.docx", "optimized_resume.pdf")
@@ -158,16 +152,16 @@ def convert_to_pdf():
     except:
         return False
 
-# ===============================
-# 🎯 SCORE EXTRACT
-# ===============================
+
+#  SCORE EXTRACT
+
 def extract_score(text):
     match = re.search(r"(\d+)%", text)
     return int(match.group(1)) if match else 0
 
-# ===============================
-# 🌐 UI
-# ===============================
+
+#  UI
+
 st.markdown("""
 # 🚀 AI Resume Optimizer  
 ### Optimize your resume with AI for better job matching
@@ -176,9 +170,9 @@ st.markdown("""
 uploaded_file = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
 jd = st.text_area("Paste Job Description")
 
-# ===============================
-# 🔍 ANALYZE
-# ===============================
+
+# ANALYZE
+
 if uploaded_file and jd:
     if st.button("🔍 Analyze Resume"):
 
@@ -190,9 +184,9 @@ if uploaded_file and jd:
         st.session_state["analysis"] = analysis
         st.session_state["resume_text"] = resume_text
 
-# ===============================
-# 📊 DISPLAY ANALYSIS
-# ===============================
+
+# DISPLAY ANALYSIS
+
 if "analysis" in st.session_state:
 
     data = parse_analysis(st.session_state["analysis"])
@@ -216,9 +210,9 @@ if "analysis" in st.session_state:
     </div>
     """, unsafe_allow_html=True)
 
-    # ===============================
-    # 🚀 OPTIMIZE
-    # ===============================
+  
+    # OPTIMIZE
+ 
     if st.button("🚀 Generate Optimized Resume"):
 
         with st.spinner("Optimizing..."):
