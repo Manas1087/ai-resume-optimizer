@@ -236,25 +236,35 @@ if "analysis" in st.session_state:
     # ===============================
     # 🚀 OPTIMIZE
     # ===============================
-    if st.button("🚀 Generate Optimized Resume"):
+  if st.button("🚀 Generate Optimized Resume"):
 
-        with st.spinner("Optimizing..."):
-            optimized = optimize_resume(jd, resume_text)
+    with st.spinner("Optimizing..."):
+        optimized = optimize_resume(jd, resume_text)
 
-        st.subheader("✨ Optimized Resume")
+    st.subheader("✨ Optimized Resume")
 
-        st.text_area(
-            "Preview",
-            optimized,
-            height=400,
-            label_visibility="collapsed"
-        )
+    st.text_area(
+        "Preview",
+        optimized,
+        height=400,
+        label_visibility="collapsed"
+    )
 
-        create_docx(optimized)
+    create_docx(optimized)
 
-        if convert_to_pdf():
-            with open("optimized_resume.pdf", "rb") as f:
-                st.download_button("📥 Download PDF", f)
-        else:
-            with open("optimized_resume.docx", "rb") as f:
-                st.download_button("📥 Download DOCX", f)
+    if convert_to_pdf():
+        with open("optimized_resume.pdf", "rb") as f:
+            st.download_button(
+                label="📥 Download PDF",
+                data=f.read(),
+                file_name="optimized_resume.pdf",
+                mime="application/pdf"
+            )
+    else:
+        with open("optimized_resume.docx", "rb") as f:
+            st.download_button(
+                label="📥 Download DOCX",
+                data=f.read(),
+                file_name="optimized_resume.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
