@@ -199,6 +199,33 @@ if uploaded_file and jd:
 # ===============================
 # 📊 DISPLAY
 # ===============================
+# Extract score
+score_text = data["score"]
+score = int(re.search(r"\d+", score_text).group()) if score_text else 0
+
+# Metrics
+col1, col2, col3 = st.columns(3)
+
+col1.metric("🎯 Match Score", score_text)
+col2.metric("📈 Strength", "Strong" if score >= 70 else "Moderate")
+col3.metric("⚠️ Improve", "Yes" if score < 70 else "Low")
+
+st.progress(score / 100)
+
+# Matching Skills
+st.markdown("### ✅ Matching Skills")
+for skill in data["matching"]:
+    st.markdown(f"- {skill}")
+
+# Missing Skills
+st.markdown("### ❌ Missing Skills")
+for skill in data["missing"]:
+    st.markdown(f"- {skill}")
+
+# Suggestions
+st.markdown("### 💡 Suggestions")
+for s in data["suggestions"]:
+    st.markdown(f"- {s}")
 if "analysis" in st.session_state:
 
     data = parse_analysis(st.session_state["analysis"])
