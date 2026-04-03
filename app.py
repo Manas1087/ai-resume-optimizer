@@ -237,10 +237,8 @@ if "analysis" in st.session_state:
     # 🚀 OPTIMIZE
     # ===============================
   if st.button("🚀 Generate Optimized Resume"):
-
     with st.spinner("Optimizing..."):
         optimized = optimize_resume(jd, resume_text)
-
     st.subheader("✨ Optimized Resume")
 
     st.text_area(
