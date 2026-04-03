@@ -112,23 +112,30 @@ def create_docx(content):
 
     for i, line in enumerate(content.split("\n")):
         line = line.strip()
+
         if not line:
             continue
 
+        # Remove markdown **
+        clean_line = line.replace("**", "")
+
+        # Name (first line)
         if i == 0:
-            run = doc.add_paragraph().add_run(line)
+            run = doc.add_paragraph().add_run(clean_line)
             run.bold = True
             run.font.size = Pt(16)
 
-        elif line.upper() in ["SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS", "EDUCATION"]:
-            run = doc.add_paragraph().add_run(line.upper())
+        # Section headings
+        elif clean_line.upper() in ["SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS", "EDUCATION"]:
+            run = doc.add_paragraph().add_run(clean_line)
             run.bold = True
 
-        elif line.startswith(("•", "-", "*")):
-            doc.add_paragraph(line[1:].strip(), style='List Bullet')
+        # Bullet points
+        elif clean_line.startswith(("-", "•", "*")):
+            doc.add_paragraph(clean_line[1:].strip(), style='List Bullet')
 
         else:
-            doc.add_paragraph(line)
+            doc.add_paragraph(clean_line)
 
     doc.save("optimized_resume.docx")
 
