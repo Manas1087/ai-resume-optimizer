@@ -5,6 +5,7 @@ from docx import Document
 from docx.shared import Pt
 from docx2pdf import convert
 import re
+import os
 
 # ===============================
 # 🎨 UI STYLE
@@ -28,9 +29,9 @@ h1, h2, h3 {
 """, unsafe_allow_html=True)
 
 # ===============================
-# 🔑 GEMINI CLIENT
+# 🔑 GEMINI CLIENT (SECURE)
 # ===============================
-client = genai.Client(api_key="AIzaSyBBbSYW53z72L7KdMdTxc0fmF0G-dj80kY")
+client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 MODEL = "gemini-2.5-flash"
 
 # ===============================
@@ -44,7 +45,7 @@ def extract_text_from_pdf(uploaded_file):
     return text
 
 # ===============================
-# 🤖 ANALYZE (STRUCTURED)
+# 🤖 ANALYZE
 # ===============================
 def analyze_resume(jd, resume):
     prompt = f"""
@@ -197,47 +198,43 @@ if uploaded_file and jd:
         st.session_state["resume_text"] = resume_text
 
 # ===============================
-# 📊 DISPLAY
+# 📊 DISPLAY ANALYSIS
 # ===============================
-# Extract score
-score_text = data["score"]
-score = int(re.search(r"\d+", score_text).group()) if score_text else 0
-
-# Metrics
-col1, col2, col3 = st.columns(3)
-
-col1.metric("🎯 Match Score", score_text)
-col2.metric("📈 Strength", "Strong" if score >= 70 else "Moderate")
-col3.metric("⚠️ Improve", "Yes" if score < 70 else "Low")
-
-st.progress(score / 100)
-
-# Matching Skills
-st.markdown("### ✅ Matching Skills")
-for skill in data["matching"]:
-    st.markdown(f"- {skill}")
-
-# Missing Skills
-st.markdown("### ❌ Missing Skills")
-for skill in data["missing"]:
-    st.markdown(f"- {skill}")
-
-# Suggestions
-st.markdown("### 💡 Suggestions")
-for s in data["suggestions"]:
-    st.markdown(f"- {s}")
 if "analysis" in st.session_state:
 
     data = parse_analysis(st.session_state["analysis"])
     resume_text = st.session_state["resume_text"]
 
-    # ===== SHOW ANALYSIS =====
     st.subheader("📊 Resume Analysis")
 
-    # (your metrics + skills UI here)
+    # Score
+    score_text = data["score"]
+    score = int(re.search(r"\d+", score_text).group()) if score_text else 0
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("🎯 Match Score", score_text)
+    col2.metric("📈 Strength", "Strong" if score >= 70 else "Moderate")
+    col3.metric("⚠️ Improve", "Yes" if score < 70 else "Low")
+
+    st.progress(score / 100)
+
+    # Matching Skills
+    st.markdown("### ✅ Matching Skills")
+    for skill in data["matching"]:
+        st.markdown(f"- {skill}")
+
+    # Missing Skills
+    st.markdown("### ❌ Missing Skills")
+    for skill in data["missing"]:
+        st.markdown(f"- {skill}")
+
+    # Suggestions
+    st.markdown("### 💡 Suggestions")
+    for s in data["suggestions"]:
+        st.markdown(f"- {s}")
 
     # ===============================
-    # 🚀 OPTIMIZE BUTTON (FIXED)
+    # 🚀 OPTIMIZE
     # ===============================
     if st.button("🚀 Generate Optimized Resume"):
 
@@ -257,15 +254,7 @@ if "analysis" in st.session_state:
 
         if convert_to_pdf():
             with open("optimized_resume.pdf", "rb") as f:
-                st.download_button(
-                    "📥 Download PDF",
-                    f,
-                    file_name="optimized_resume.pdf"
-                )
+                st.download_button("📥 Download PDF", f)
         else:
             with open("optimized_resume.docx", "rb") as f:
-                st.download_button(
-                    "📥 Download DOCX",
-                    f,
-                    file_name="optimized_resume.docx"
-                )
+                st.download_button("📥 Download DOCX", f)
