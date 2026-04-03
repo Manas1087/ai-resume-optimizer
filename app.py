@@ -1,3 +1,4 @@
+
 import streamlit as st
 import fitz  # PyMuPDF
 from google import genai
@@ -5,10 +6,36 @@ from docx import Document
 from docx.shared import Pt
 from docx2pdf import convert
 import re
-import os
 
 # ===============================
-# 🎨 UI STYLE
+# 🎨 CUSTOM UI (SaaS STYLE)
+# ===============================
+st.markdown("""
+<style>
+.main {
+    background-color: #0f172a;
+}
+h1, h2, h3 {
+    color: #e2e8f0;
+}
+.stButton>button {
+    background-color: #2563eb;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: bold;
+}
+.stButton>button:hover {
+    background-color: #1d4ed8;
+}
+.block-container {
+    padding-top: 2rem;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ===============================
+# 🔑 GEMINI CLIENT
 # ===============================
 st.markdown("""
 <style>
@@ -49,23 +76,12 @@ def extract_text_from_pdf(uploaded_file):
 # ===============================
 def analyze_resume(jd, resume):
     prompt = f"""
-Analyze the resume against the job description.
+Return in markdown format:
 
-STRICT FORMAT:
-
-Match Score: <number>%
-
-Matching Skills:
-- skill1
-- skill2
-
-Missing Skills:
-- skill1
-- skill2
-
-Suggestions:
-- point1
-- point2
+**Match Score:** <number>%
+**Matching Skills:** <comma separated>
+**Missing Skills:** <comma separated>
+**Suggestions:** <short paragraph>
 
 Job Description:
 {jd}
@@ -86,18 +102,13 @@ def optimize_resume(jd, resume):
     prompt = f"""
 Rewrite the resume keeping structure same.
 
-Rules:
 - Use bullet points
 - ATS friendly
 - Add missing keywords
-- Use clean plain text formatting
-- DO NOT use markdown symbols like **, *, or #
-- Section headings should be in CAPITAL LETTERS
-- Keep proper spacing between sections
 
-Return only clean resume text.
+Return only formatted resume.
 
-Job Description:
+JD:
 {jd}
 
 Resume:
@@ -117,27 +128,20 @@ def create_docx(content):
 
     for i, line in enumerate(content.split("\n")):
         line = line.strip()
-
         if not line:
             continue
 
-        # Remove markdown **
-        clean_line = line.replace("**", "")
-
-        # Name (first line)
         if i == 0:
-            run = doc.add_paragraph().add_run(clean_line)
+            run = doc.add_paragraph().add_run(line)
             run.bold = True
             run.font.size = Pt(16)
 
-        # Section headings
-        elif clean_line.upper() in ["SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS", "EDUCATION"]:
-            run = doc.add_paragraph().add_run(clean_line)
+        elif line.upper() in ["SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS", "EDUCATION"]:
+            run = doc.add_paragraph().add_run(line.upper())
             run.bold = True
 
-        # Bullet points
-        elif clean_line.startswith(("-", "•", "*")):
-            doc.add_paragraph(clean_line[1:].strip(), style='List Bullet')
+        elif line.startswith(("•", "-", "*")):
+            doc.add_paragraph(line[1:].strip(), style='List Bullet')
 
         else:
             doc.add_paragraph(clean_line)
@@ -155,42 +159,19 @@ def convert_to_pdf():
         return False
 
 # ===============================
-# 🧠 PARSE ANALYSIS
+# 🎯 SCORE EXTRACT
 # ===============================
-def parse_analysis(text):
-    sections = {
-        "score": "",
-        "matching": [],
-        "missing": [],
-        "suggestions": []
-    }
-
-    current = None
-
-    for line in text.split("\n"):
-        line = line.strip()
-
-        if "Match Score" in line:
-            sections["score"] = line.split(":")[1].strip()
-
-        elif line.startswith("Matching Skills"):
-            current = "matching"
-
-        elif line.startswith("Missing Skills"):
-            current = "missing"
-
-        elif line.startswith("Suggestions"):
-            current = "suggestions"
-
-        elif line.startswith("-") and current:
-            sections[current].append(line[1:].strip())
-
-    return sections
+def extract_score(text):
+    match = re.search(r"(\d+)%", text)
+    return int(match.group(1)) if match else 0
 
 # ===============================
 # 🌐 UI
 # ===============================
-st.title("🚀 AI Resume Optimizer")
+st.markdown("""
+# 🚀 AI Resume Optimizer  
+### Optimize your resume with AI for better job matching
+""")
 
 uploaded_file = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
 jd = st.text_area("Paste Job Description")
@@ -217,63 +198,40 @@ if "analysis" in st.session_state:
     data = parse_analysis(st.session_state["analysis"])
     resume_text = st.session_state["resume_text"]
 
-    st.subheader("📊 Resume Analysis")
+    score = extract_score(analysis)
 
-    # Score
-    score_text = data["score"]
-    score = int(re.search(r"\d+", score_text).group()) if score_text else 0
+    st.markdown("## 📊 Resume Analysis")
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("🎯 Match Score", score_text)
-    col2.metric("📈 Strength", "Strong" if score >= 70 else "Moderate")
+    col1.metric("🎯 Match Score", f"{score}%")
+    col2.metric("📈 Level", "Strong" if score >= 70 else "Moderate")
     col3.metric("⚠️ Improve", "Yes" if score < 70 else "Low")
 
     st.progress(score / 100)
 
-    # Matching Skills
-    st.markdown("### ✅ Matching Skills")
-    for skill in data["matching"]:
-        st.markdown(f"- {skill}")
+    st.markdown("### 📋 Details")
+    st.markdown(f"""
+    <div style="background:#1e293b;padding:15px;border-radius:10px">
+    {analysis}
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Missing Skills
-    st.markdown("### ❌ Missing Skills")
-    for skill in data["missing"]:
-        st.markdown(f"- {skill}")
+    # ===============================
+    # 🚀 OPTIMIZE
+    # ===============================
+    if st.button("🚀 Generate Optimized Resume"):
 
-    # Suggestions
-    st.markdown("### 💡 Suggestions")
-    for s in data["suggestions"]:
-        st.markdown(f"- {s}")
+        with st.spinner("Optimizing..."):
+            optimized = optimize_resume(jd, resume_text)
 
-# ===============================
-# 🚀 OPTIMIZE
-# ===============================
-if st.button("🚀 Generate Optimized Resume"):
-    with st.spinner("Optimizing..."):
-        optimized = optimize_resume(jd, resume_text)
-    st.subheader("✨ Optimized Resume")
+        st.markdown("### ✨ Optimized Resume")
+        st.text_area("Preview", optimized, height=400, label_visibility="collapsed")
 
-    st.text_area(
-        "Preview",
-        optimized,
-        height=400,
-        label_visibility="collapsed"
-    )
-    create_docx(optimized)
+        create_docx(optimized)
 
-    if convert_to_pdf():
-        with open("optimized_resume.pdf", "rb") as f:
-            st.download_button(
-                label="📥 Download PDF",
-                data=f.read(),
-                file_name="optimized_resume.pdf",
-                mime="application/pdf"
-            )
-    else:
-        with open("optimized_resume.docx", "rb") as f:
-            st.download_button(
-                label="📥 Download DOCX",
-                data=f.read(),
-                file_name="optimized_resume.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
+        if convert_to_pdf():
+            with open("optimized_resume.pdf", "rb") as f:
+                st.download_button("📥 Download PDF", f)
+        else:
+            with open("optimized_resume.docx", "rb") as f:
+                st.download_button("📥 Download DOCX", f)
