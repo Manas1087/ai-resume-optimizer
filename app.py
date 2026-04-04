@@ -16,13 +16,14 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────
-#  THEME STATE
+#  THEME — driven by ?theme= query param
 # ─────────────────────────────────────────────
 
-if "theme" not in st.session_state:
-    st.session_state["theme"] = "dark"
-
-is_dark = st.session_state["theme"] == "dark"
+params = st.query_params
+theme = params.get("theme", "dark")
+if theme not in ("dark", "light"):
+    theme = "dark"
+is_dark = theme == "dark"
 
 DARK = {
     "bg":              "#080c14",
@@ -44,12 +45,13 @@ DARK = {
     "upload_border":   "rgba(79,142,247,0.35)",
     "scroll_thumb":    "rgba(79,142,247,0.30)",
     "progress_track":  "rgba(255,255,255,0.07)",
-    "pill_bg":         "rgba(255,255,255,0.06)",
-    "pill_border":     "rgba(255,255,255,0.14)",
-    "pill_text":       "#a0b0cc",
-    "pill_hover_bg":   "rgba(255,255,255,0.10)",
+    "pill_bg":         "rgba(255,255,255,0.07)",
+    "pill_border":     "rgba(255,255,255,0.15)",
+    "pill_color":      "#a0b0cc",
+    "pill_hover":      "rgba(255,255,255,0.12)",
+    "next_theme":      "light",
     "icon":            "☀️",
-    "label":           "Light",
+    "next_label":      "Light mode",
 }
 
 LIGHT = {
@@ -73,11 +75,12 @@ LIGHT = {
     "scroll_thumb":    "rgba(37,99,235,0.20)",
     "progress_track":  "rgba(0,0,0,0.07)",
     "pill_bg":         "rgba(0,0,0,0.05)",
-    "pill_border":     "rgba(0,0,0,0.12)",
-    "pill_text":       "#475569",
-    "pill_hover_bg":   "rgba(0,0,0,0.09)",
+    "pill_border":     "rgba(0,0,0,0.13)",
+    "pill_color":      "#475569",
+    "pill_hover":      "rgba(0,0,0,0.10)",
+    "next_theme":      "dark",
     "icon":            "🌙",
-    "label":           "Dark",
+    "next_label":      "Dark mode",
 }
 
 T = DARK if is_dark else LIGHT
@@ -102,62 +105,66 @@ html, body, [data-testid="stAppViewContainer"] {{
 
 .block-container {{
     max-width: 900px !important;
-    padding: 1.5rem 2rem 5rem !important;
+    padding: 2rem 2rem 5rem !important;
     margin: 0 auto !important;
 }}
 
-/* ════════════════════════════════════════
-   TOGGLE PILL — fixed top-right button
-   ════════════════════════════════════════ */
-.toggle-wrapper {{
-    position: fixed;
-    top: 1rem;
-    right: 1.5rem;
-    z-index: 9999;
+/* ── PRIMARY BUTTONS ── */
+.stButton > button {{
+    width: 100%;
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 0.72rem 1.5rem !important;
+    font-family: 'Syne', sans-serif !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    transition: opacity 0.2s, transform 0.15s !important;
+    box-shadow: 0 4px 18px rgba(37,99,235,0.28) !important;
+    cursor: pointer !important;
 }}
-.toggle-pill {{
+.stButton > button:hover {{
+    opacity: 0.87 !important;
+    transform: translateY(-1px) !important;
+}}
+
+/* ── THEME PILL (pure HTML <a>) ── */
+.theme-pill-wrap {{
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+}}
+a.theme-pill {{
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.4rem;
     background: {T["pill_bg"]};
-    color: {T["pill_text"]};
+    color: {T["pill_color"]} !important;
     border: 1px solid {T["pill_border"]};
     border-radius: 100px;
-    padding: 0.38rem 1rem;
+    padding: 0.38rem 1.1rem;
     font-family: 'Inter', sans-serif;
     font-size: 0.78rem;
     font-weight: 500;
     letter-spacing: 0.02em;
+    text-decoration: none !important;
     cursor: pointer;
     transition: background 0.2s, border-color 0.2s;
-    text-decoration: none;
     white-space: nowrap;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
 }}
-.toggle-pill:hover {{
-    background: {T["pill_hover_bg"]};
-    border-color: rgba(79,142,247,0.4);
+a.theme-pill:hover {{
+    background: {T["pill_hover"]};
+    border-color: rgba(79,142,247,0.45);
+    text-decoration: none !important;
 }}
 
-/* Hide the Streamlit button entirely — we use a custom HTML link */
-[data-testid="stHorizontalBlock"]:first-of-type
-[data-testid="column"]:last-child
-.stButton > button {{
-    display: none !important;
-}}
-
-/* ════════════════════════════════════════
-   HERO — centered, no drift
-   ════════════════════════════════════════ */
+/* ── HERO ── */
 .hero-wrap {{
     text-align: center;
-    padding: 2.8rem 0 2.2rem;
+    padding: 2.6rem 0 2rem;
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }}
 .hero-badge {{
     display: inline-flex;
@@ -171,18 +178,16 @@ html, body, [data-testid="stAppViewContainer"] {{
     border: 1px solid rgba(79,142,247,0.30);
     border-radius: 100px;
     padding: 0.32rem 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.4rem;
 }}
 .hero-title {{
     font-family: 'Syne', sans-serif;
-    font-size: clamp(2.6rem, 5.5vw, 4rem);
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
     font-weight: 800;
     line-height: 1.08;
     letter-spacing: -0.025em;
     color: {T["text_primary"]};
-    margin-bottom: 1.1rem;
-    text-align: center;
-    width: 100%;
+    margin-bottom: 1rem;
 }}
 .hero-title .grad {{
     background: linear-gradient(130deg, #3b82f6 0%, #8b5cf6 55%, #a78bfa 100%);
@@ -197,12 +202,9 @@ html, body, [data-testid="stAppViewContainer"] {{
     margin: 0 auto;
     line-height: 1.7;
     font-weight: 400;
-    text-align: center;
 }}
 
-/* ════════════════════════════════════════
-   DIVIDERS & LABELS
-   ════════════════════════════════════════ */
+/* ── DIVIDERS & LABELS ── */
 .divider {{
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(79,142,247,0.20), transparent);
@@ -219,9 +221,7 @@ html, body, [data-testid="stAppViewContainer"] {{
     display: block;
 }}
 
-/* ════════════════════════════════════════
-   METRIC TILES
-   ════════════════════════════════════════ */
+/* ── METRIC TILES ── */
 .metrics-row {{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -255,9 +255,7 @@ html, body, [data-testid="stAppViewContainer"] {{
     letter-spacing: 0.03em;
 }}
 
-/* ════════════════════════════════════════
-   PROGRESS BAR
-   ════════════════════════════════════════ */
+/* ── PROGRESS BAR ── */
 .progress-wrap {{ margin: 0 0 1.6rem; }}
 .progress-track {{
     height: 5px;
@@ -278,9 +276,7 @@ html, body, [data-testid="stAppViewContainer"] {{
     margin-top: 0.4rem;
 }}
 
-/* ════════════════════════════════════════
-   SKILL CHIPS
-   ════════════════════════════════════════ */
+/* ── SKILL CHIPS ── */
 .chips-section {{ margin-bottom: 1.1rem; }}
 .chips-title {{
     font-size: 0.66rem;
@@ -309,9 +305,7 @@ html, body, [data-testid="stAppViewContainer"] {{
     border: 1px solid rgba(248,113,113,0.25);
 }}
 
-/* ════════════════════════════════════════
-   SUGGESTIONS BOX
-   ════════════════════════════════════════ */
+/* ── SUGGESTIONS ── */
 .suggestions-box {{
     background: {T["analysis_bg"]};
     border: 1px solid {T["border"]};
@@ -334,9 +328,7 @@ html, body, [data-testid="stAppViewContainer"] {{
     display: block;
 }}
 
-/* ════════════════════════════════════════
-   OPTIMIZED PREVIEW
-   ════════════════════════════════════════ */
+/* ── PREVIEW BOX ── */
 .preview-box {{
     background: {T["preview_bg"]};
     border: 1px solid {T["border_accent"]};
@@ -351,14 +343,11 @@ html, body, [data-testid="stAppViewContainer"] {{
     line-height: 1.8;
 }}
 
-/* ════════════════════════════════════════
-   WIDGETS
-   ════════════════════════════════════════ */
+/* ── WIDGETS ── */
 [data-testid="stFileUploader"] {{
     background: {T["upload_bg"]} !important;
     border: 1.5px dashed {T["upload_border"]} !important;
     border-radius: 14px !important;
-    transition: border-color 0.2s;
 }}
 [data-testid="stFileUploader"]:hover {{
     border-color: rgba(79,142,247,0.6) !important;
@@ -378,27 +367,7 @@ textarea:focus {{
 }}
 label {{ color: {T["text_muted"]} !important; }}
 
-/* Primary action buttons */
-.stButton > button {{
-    width: 100%;
-    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 0.72rem 1.5rem !important;
-    font-family: 'Syne', sans-serif !important;
-    font-size: 0.88rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.04em !important;
-    transition: opacity 0.2s, transform 0.15s !important;
-    box-shadow: 0 4px 18px rgba(37,99,235,0.28) !important;
-}}
-.stButton > button:hover {{
-    opacity: 0.87 !important;
-    transform: translateY(-1px) !important;
-}}
-
-/* Hint + footer */
+/* ── HINT + FOOTER ── */
 .hint-text {{
     text-align: center;
     color: {T["text_faint"]};
@@ -416,20 +385,9 @@ label {{ color: {T["text_muted"]} !important; }}
     text-transform: uppercase;
 }}
 
-/* Scrollbar */
 ::-webkit-scrollbar {{ width: 5px; }}
 ::-webkit-scrollbar-track {{ background: transparent; }}
 ::-webkit-scrollbar-thumb {{ background: {T["scroll_thumb"]}; border-radius: 99px; }}
-
-/* Remove extra top padding from first block added by column layout */
-[data-testid="stHorizontalBlock"]:first-of-type {{
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-    min-height: 0 !important;
-    height: 0 !important;
-    overflow: hidden !important;
-    visibility: hidden !important;
-}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -443,13 +401,6 @@ MODEL = "gemini-2.5-flash"
 # ─────────────────────────────────────────────
 #  HELPERS
 # ─────────────────────────────────────────────
-
-def safe_rerun():
-    try:
-        st.rerun()
-    except AttributeError:
-        st.experimental_rerun()
-
 
 def extract_text_from_pdf(uploaded_file) -> str:
     text = ""
@@ -521,33 +472,15 @@ def render_chips(csv: str, cls: str) -> str:
 
 
 # ─────────────────────────────────────────────
-#  THEME TOGGLE — fixed-position HTML pill
-#  (uses query param trick to trigger rerun)
+#  THEME TOGGLE  — pure <a href> link, no JS,
+#  no Streamlit button at all.
 # ─────────────────────────────────────────────
 
-# Hidden Streamlit button that actually does the rerun
-_, toggle_col = st.columns([9, 1])
-with toggle_col:
-    if st.button("__toggle__", key="theme_toggle"):
-        st.session_state["theme"] = "light" if is_dark else "dark"
-        safe_rerun()
-
-# Beautiful fixed pill rendered via HTML
 st.markdown(f"""
-<div class="toggle-wrapper">
-    <span class="toggle-pill" onclick="
-        const btns = window.parent.document.querySelectorAll('button');
-        for (let b of btns) {{
-            if (b.innerText.includes('__toggle__') || b.getAttribute('data-testid') === 'baseButton-secondary') {{
-                b.click(); break;
-            }}
-        }}
-        // fallback: find by key
-        const all = window.parent.document.querySelectorAll('.stButton button');
-        if (all.length > 0) all[0].click();
-    ">
-        {T['icon']} &nbsp;{T['label']} mode
-    </span>
+<div class="theme-pill-wrap">
+    <a class="theme-pill" href="?theme={T['next_theme']}">
+        {T['icon']} &nbsp;{T['next_label']}
+    </a>
 </div>
 """, unsafe_allow_html=True)
 
@@ -625,7 +558,6 @@ if "analysis" in st.session_state:
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     st.markdown('<span class="section-label">03 — Analysis Results</span>', unsafe_allow_html=True)
 
-    # Score tiles
     st.markdown(f"""
     <div class="metrics-row">
         <div class="metric-tile">
@@ -647,7 +579,6 @@ if "analysis" in st.session_state:
     </div>
     """, unsafe_allow_html=True)
 
-    # Progress bar
     st.markdown(f"""
     <div class="progress-wrap">
         <div class="progress-track">
@@ -657,7 +588,6 @@ if "analysis" in st.session_state:
     </div>
     """, unsafe_allow_html=True)
 
-    # Skill chips
     if matching:
         st.markdown(f"""
         <div class="chips-section">
@@ -674,7 +604,6 @@ if "analysis" in st.session_state:
         </div>
         """, unsafe_allow_html=True)
 
-    # Suggestions
     if suggest:
         st.markdown(f"""
         <div class="suggestions-box">
@@ -684,10 +613,6 @@ if "analysis" in st.session_state:
         """, unsafe_allow_html=True)
 
     st.markdown("<div style='height:0.8rem'></div>", unsafe_allow_html=True)
-
-    # ─────────────────────────────────────────────
-    #  OPTIMIZE
-    # ─────────────────────────────────────────────
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     st.markdown('<span class="section-label">04 — Optimized Resume</span>', unsafe_allow_html=True)
