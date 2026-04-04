@@ -2,7 +2,7 @@ import streamlit as st
 import fitz  # PyMuPDF
 from google import genai
 import re
-import markdown as md_lib  # pip install markdown
+import markdown as md_lib
 
 # ─────────────────────────────────────────────
 #  PAGE CONFIG
@@ -109,6 +109,15 @@ html, body, [data-testid="stAppViewContainer"] {{
     margin: 0 auto !important;
 }}
 
+/* Force Streamlit's element containers to not interfere with centering */
+[data-testid="stMarkdownContainer"] {{
+    width: 100% !important;
+}}
+[data-testid="stMarkdownContainer"] > div {{
+    width: 100% !important;
+    text-align: center !important;
+}}
+
 /* ── PRIMARY BUTTONS ── */
 .stButton > button {{
     width: 100%;
@@ -130,7 +139,7 @@ html, body, [data-testid="stAppViewContainer"] {{
     transform: translateY(-1px) !important;
 }}
 
-/* ── THEME PILL (pure HTML <a>) ── */
+/* ── THEME PILL ── */
 .theme-pill-wrap {{
     display: flex;
     justify-content: flex-end;
@@ -160,11 +169,14 @@ a.theme-pill:hover {{
     text-decoration: none !important;
 }}
 
-/* ── HERO ── */
+/* ── HERO — force true center ── */
 .hero-wrap {{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
     padding: 2.6rem 0 2rem;
-    width: 100%;
 }}
 .hero-badge {{
     display: inline-flex;
@@ -188,6 +200,8 @@ a.theme-pill:hover {{
     letter-spacing: -0.025em;
     color: {T["text_primary"]};
     margin-bottom: 1rem;
+    text-align: center;
+    width: 100%;
 }}
 .hero-title .grad {{
     background: linear-gradient(130deg, #3b82f6 0%, #8b5cf6 55%, #a78bfa 100%);
@@ -198,10 +212,12 @@ a.theme-pill:hover {{
 .hero-sub {{
     font-size: 1rem;
     color: {T["text_muted"]};
-    max-width: 480px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 500px;
     line-height: 1.7;
     font-weight: 400;
+    text-align: center;
+    margin: 0 auto;
 }}
 
 /* ── DIVIDERS & LABELS ── */
@@ -209,6 +225,7 @@ a.theme-pill:hover {{
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(79,142,247,0.20), transparent);
     margin: 2.2rem 0;
+    width: 100%;
 }}
 .section-label {{
     font-family: 'Syne', sans-serif;
@@ -219,6 +236,7 @@ a.theme-pill:hover {{
     color: #4f8ef7;
     margin-bottom: 0.7rem;
     display: block;
+    text-align: left;
 }}
 
 /* ── METRIC TILES ── */
@@ -409,7 +427,6 @@ def extract_text_from_pdf(uploaded_file) -> str:
             text += page.get_text()
     return text
 
-
 def analyze_resume(jd: str, resume: str) -> str:
     prompt = f"""
 You are an expert ATS resume analyst. Return ONLY this format, nothing else:
@@ -426,7 +443,6 @@ Resume:
 {resume}
 """
     return client.models.generate_content(model=MODEL, contents=prompt).text
-
 
 def optimize_resume(jd: str, resume: str) -> str:
     prompt = f"""
@@ -445,24 +461,19 @@ Resume:
 """
     return client.models.generate_content(model=MODEL, contents=prompt).text
 
-
 def extract_score(text: str) -> int:
     m = re.search(r"(\d+)%", text)
     return int(m.group(1)) if m else 0
-
 
 def extract_field(text: str, field: str) -> str:
     m = re.search(rf"\*\*{field}:\*\*\s*(.+?)(?=\n\*\*|\Z)", text, re.DOTALL)
     return m.group(1).strip() if m else ""
 
-
 def score_color(score: int) -> str:
     return "#34d399" if score >= 75 else "#fbbf24" if score >= 50 else "#f87171"
 
-
 def score_label(score: int) -> str:
     return "Strong Match" if score >= 75 else "Moderate Match" if score >= 50 else "Needs Work"
-
 
 def render_chips(csv: str, cls: str) -> str:
     items = [s.strip() for s in csv.split(",") if s.strip()]
@@ -470,15 +481,15 @@ def render_chips(csv: str, cls: str) -> str:
         f'<span class="chip {cls}">{item}</span>' for item in items
     ) + "</div>"
 
-
 # ─────────────────────────────────────────────
-#  THEME TOGGLE  — pure <a href> link, no JS,
-#  no Streamlit button at all.
+#  THEME TOGGLE
+#  target="_self" keeps it in the same tab.
+#  The ?theme= param is read on every rerun.
 # ─────────────────────────────────────────────
 
 st.markdown(f"""
 <div class="theme-pill-wrap">
-    <a class="theme-pill" href="?theme={T['next_theme']}">
+    <a class="theme-pill" href="?theme={T['next_theme']}" target="_self">
         {T['icon']} &nbsp;{T['next_label']}
     </a>
 </div>
@@ -488,7 +499,7 @@ st.markdown(f"""
 #  HERO
 # ─────────────────────────────────────────────
 
-st.markdown("""
+st.markdown(f"""
 <div class="hero-wrap">
     <div class="hero-badge">✦ &nbsp;Powered by Gemini 2.5 Flash</div>
     <h1 class="hero-title">
