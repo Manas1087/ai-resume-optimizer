@@ -3,3 +3,4 @@ pymupdf
 python-docx
 docx2pdf
 google-genai
+markdown
