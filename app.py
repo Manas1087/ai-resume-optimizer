@@ -1,12 +1,10 @@
 import streamlit as st
-import fitz  # PyMuPDF
+import fitz 
 from google import genai
 import re
 import markdown as md_lib
 
-# ─────────────────────────────────────────────
 #  PAGE CONFIG
-# ─────────────────────────────────────────────
 
 st.set_page_config(
     page_title="AI Resume Optimizer",
@@ -15,9 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ─────────────────────────────────────────────
-#  THEME — driven by ?theme= query param
-# ─────────────────────────────────────────────
+#  THEME
 
 params = st.query_params
 theme = params.get("theme", "dark")
@@ -85,9 +81,7 @@ LIGHT = {
 
 T = DARK if is_dark else LIGHT
 
-# ─────────────────────────────────────────────
 #  STYLES
-# ─────────────────────────────────────────────
 
 st.markdown(f"""
 <style>
@@ -409,16 +403,12 @@ label {{ color: {T["text_muted"]} !important; }}
 </style>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
 #  GEMINI CLIENT
-# ─────────────────────────────────────────────
 
 client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 MODEL = "gemini-2.5-flash"
 
-# ─────────────────────────────────────────────
 #  HELPERS
-# ─────────────────────────────────────────────
 
 def extract_text_from_pdf(uploaded_file) -> str:
     text = ""
@@ -481,12 +471,6 @@ def render_chips(csv: str, cls: str) -> str:
         f'<span class="chip {cls}">{item}</span>' for item in items
     ) + "</div>"
 
-# ─────────────────────────────────────────────
-#  THEME TOGGLE
-#  target="_self" keeps it in the same tab.
-#  The ?theme= param is read on every rerun.
-# ─────────────────────────────────────────────
-
 st.markdown(f"""
 <div class="theme-pill-wrap">
     <a class="theme-pill" href="?theme={T['next_theme']}" target="_self">
@@ -495,9 +479,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
 #  HERO
-# ─────────────────────────────────────────────
 
 st.markdown(f"""
 <div class="hero-wrap">
@@ -513,9 +495,7 @@ st.markdown(f"""
 <div class="divider"></div>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
 #  INPUTS
-# ─────────────────────────────────────────────
 
 col_left, col_right = st.columns([1, 1], gap="large")
 
@@ -536,9 +516,7 @@ with col_right:
 
 st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
 #  ANALYZE
-# ─────────────────────────────────────────────
 
 if uploaded_file and jd:
     if st.button("✦  Analyze My Resume"):
@@ -551,9 +529,7 @@ if uploaded_file and jd:
 elif not uploaded_file:
     st.markdown('<p class="hint-text">⬆ Upload a PDF resume to get started</p>', unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
 #  RESULTS
-# ─────────────────────────────────────────────
 
 if "analysis" in st.session_state:
     analysis    = st.session_state["analysis"]
@@ -639,9 +615,7 @@ if "analysis" in st.session_state:
             unsafe_allow_html=True,
         )
 
-# ─────────────────────────────────────────────
 #  FOOTER
-# ─────────────────────────────────────────────
 
 st.markdown("""
 <div class="footer">AI Resume Optimizer &nbsp;·&nbsp; Gemini 2.5 Flash</div>
