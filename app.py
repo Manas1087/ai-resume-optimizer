@@ -44,7 +44,6 @@ DARK = {
     "upload_border":   "rgba(79,142,247,0.35)",
     "scroll_thumb":    "rgba(79,142,247,0.30)",
     "progress_track":  "rgba(255,255,255,0.07)",
-    # toggle pill
     "pill_bg":         "rgba(255,255,255,0.06)",
     "pill_border":     "rgba(255,255,255,0.14)",
     "pill_text":       "#a0b0cc",
@@ -73,7 +72,6 @@ LIGHT = {
     "upload_border":   "rgba(37,99,235,0.25)",
     "scroll_thumb":    "rgba(37,99,235,0.20)",
     "progress_track":  "rgba(0,0,0,0.07)",
-    # toggle pill
     "pill_bg":         "rgba(0,0,0,0.05)",
     "pill_border":     "rgba(0,0,0,0.12)",
     "pill_text":       "#475569",
@@ -109,42 +107,57 @@ html, body, [data-testid="stAppViewContainer"] {{
 }}
 
 /* ════════════════════════════════════════
-   TOGGLE  — target only the first row's
-   last column so it doesn't affect other
-   buttons on the page
+   TOGGLE PILL — fixed top-right button
    ════════════════════════════════════════ */
+.toggle-wrapper {{
+    position: fixed;
+    top: 1rem;
+    right: 1.5rem;
+    z-index: 9999;
+}}
+.toggle-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: {T["pill_bg"]};
+    color: {T["pill_text"]};
+    border: 1px solid {T["pill_border"]};
+    border-radius: 100px;
+    padding: 0.38rem 1rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    text-decoration: none;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+}}
+.toggle-pill:hover {{
+    background: {T["pill_hover_bg"]};
+    border-color: rgba(79,142,247,0.4);
+}}
+
+/* Hide the Streamlit button entirely — we use a custom HTML link */
 [data-testid="stHorizontalBlock"]:first-of-type
 [data-testid="column"]:last-child
 .stButton > button {{
-    background: {T["pill_bg"]} !important;
-    color: {T["pill_text"]} !important;
-    border: 1px solid {T["pill_border"]} !important;
-    border-radius: 100px !important;
-    padding: 0.38rem 1rem !important;
-    font-family: 'Inter', sans-serif !important;
-    font-size: 0.78rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.02em !important;
-    box-shadow: none !important;
-    width: auto !important;
-    float: right;
-    transition: background 0.2s !important;
-}}
-[data-testid="stHorizontalBlock"]:first-of-type
-[data-testid="column"]:last-child
-.stButton > button:hover {{
-    background: {T["pill_hover_bg"]} !important;
-    border-color: rgba(79,142,247,0.4) !important;
-    opacity: 1 !important;
-    transform: none !important;
+    display: none !important;
 }}
 
 /* ════════════════════════════════════════
-   HERO
+   HERO — centered, no drift
    ════════════════════════════════════════ */
 .hero-wrap {{
     text-align: center;
     padding: 2.8rem 0 2.2rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }}
 .hero-badge {{
     display: inline-flex;
@@ -168,6 +181,8 @@ html, body, [data-testid="stAppViewContainer"] {{
     letter-spacing: -0.025em;
     color: {T["text_primary"]};
     margin-bottom: 1.1rem;
+    text-align: center;
+    width: 100%;
 }}
 .hero-title .grad {{
     background: linear-gradient(130deg, #3b82f6 0%, #8b5cf6 55%, #a78bfa 100%);
@@ -182,6 +197,7 @@ html, body, [data-testid="stAppViewContainer"] {{
     margin: 0 auto;
     line-height: 1.7;
     font-weight: 400;
+    text-align: center;
 }}
 
 /* ════════════════════════════════════════
@@ -362,7 +378,7 @@ textarea:focus {{
 }}
 label {{ color: {T["text_muted"]} !important; }}
 
-/* Primary action buttons (all EXCEPT toggle) */
+/* Primary action buttons */
 .stButton > button {{
     width: 100%;
     background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
@@ -404,6 +420,16 @@ label {{ color: {T["text_muted"]} !important; }}
 ::-webkit-scrollbar {{ width: 5px; }}
 ::-webkit-scrollbar-track {{ background: transparent; }}
 ::-webkit-scrollbar-thumb {{ background: {T["scroll_thumb"]}; border-radius: 99px; }}
+
+/* Remove extra top padding from first block added by column layout */
+[data-testid="stHorizontalBlock"]:first-of-type {{
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -495,14 +521,35 @@ def render_chips(csv: str, cls: str) -> str:
 
 
 # ─────────────────────────────────────────────
-#  THEME TOGGLE  — top-right pill
+#  THEME TOGGLE — fixed-position HTML pill
+#  (uses query param trick to trigger rerun)
 # ─────────────────────────────────────────────
 
+# Hidden Streamlit button that actually does the rerun
 _, toggle_col = st.columns([9, 1])
 with toggle_col:
-    if st.button(f"{T['icon']} {T['label']}", key="theme_toggle"):
+    if st.button("__toggle__", key="theme_toggle"):
         st.session_state["theme"] = "light" if is_dark else "dark"
         safe_rerun()
+
+# Beautiful fixed pill rendered via HTML
+st.markdown(f"""
+<div class="toggle-wrapper">
+    <span class="toggle-pill" onclick="
+        const btns = window.parent.document.querySelectorAll('button');
+        for (let b of btns) {{
+            if (b.innerText.includes('__toggle__') || b.getAttribute('data-testid') === 'baseButton-secondary') {{
+                b.click(); break;
+            }}
+        }}
+        // fallback: find by key
+        const all = window.parent.document.querySelectorAll('.stButton button');
+        if (all.length > 0) all[0].click();
+    ">
+        {T['icon']} &nbsp;{T['label']} mode
+    </span>
+</div>
+""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 #  HERO
