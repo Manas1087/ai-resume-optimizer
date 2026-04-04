@@ -16,10 +16,10 @@ st.set_page_config(
 #  THEME
 
 params = st.query_params
-theme = params.get("theme", "dark")
+theme = params.get("theme", "light")
 if theme not in ("dark", "light"):
-    theme = "dark"
-is_dark = theme == "dark"
+    theme = "light"
+is_light = theme == "light"
 
 DARK = {
     "bg":              "#080c14",
@@ -79,7 +79,7 @@ LIGHT = {
     "next_label":      "Dark mode",
 }
 
-T = DARK if is_dark else LIGHT
+T = LIGHT if is_light else DARK
 
 #  STYLES
 
